@@ -122,7 +122,7 @@ function App() {
   const displayError = error || speechError || geminiError;
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden">
+    <div className="h-screen flex flex-col relative overflow-hidden bg-[#0A0F1A]">
       {/* Background effects */}
       <div className="fixed inset-0 pointer-events-none z-0">
         {/* Main gradient */}
@@ -166,7 +166,7 @@ function App() {
 
       <Header isListening={isListening} isSpeaking={isSpeaking} />
 
-      <main className="flex-1 flex flex-col pt-20 pb-36 relative z-10">
+      <main className="flex-1 flex flex-col relative z-10 overflow-hidden pt-20">
         <ChatContainer
           messages={messages}
           isLoading={isLoading && messages.length > 0 && messages[messages.length - 1].content === ''}
@@ -174,8 +174,8 @@ function App() {
         />
       </main>
 
-      <div className="fixed bottom-0 left-0 right-0 z-50">
-        <div className="glass-dark py-4 px-4">
+      <div className="relative z-50">
+        <div className="glass-dark py-6 px-4 pb-8 sm:pb-6">
           <div className="max-w-4xl mx-auto flex flex-col items-center">
             {displayError && (
               <div

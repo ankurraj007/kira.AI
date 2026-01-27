@@ -23,7 +23,6 @@ export function ChatContainer({ messages, isLoading, interimTranscript }: ChatCo
         <div
             ref={containerRef}
             className="flex-1 overflow-y-auto custom-scrollbar px-4 py-6"
-            style={{ maxHeight: 'calc(100vh - 220px)' }}
         >
             <div className="max-w-3xl mx-auto space-y-4">
                 {isEmpty ? (

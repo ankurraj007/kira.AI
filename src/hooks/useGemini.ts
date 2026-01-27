@@ -119,7 +119,13 @@ export function useGemini(): UseGeminiReturn {
             if ((err as Error).name === 'AbortError') {
                 throw err;
             }
-            const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+            let errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+
+            // Provide friendly message for quota limits
+            if (errorMessage.toLowerCase().includes('quota') || errorMessage.includes('429')) {
+                errorMessage = 'Token limit reached. Please try again after some time.';
+            }
+
             setError(errorMessage);
             setIsLoading(false);
             throw new Error(errorMessage);
