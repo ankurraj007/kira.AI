@@ -1,0 +1,46 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Version control
+.git/
+.gitignore
+
+# Environment files (secrets should be passed at runtime)
+.env
+.env.local
+.env.*.local
+
+# IDE and editor configs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test and coverage
+coverage/
+.nyc_output/
+
+# Documentation and misc
+README.md
+LICENSE
+*.md
+
+# Docker files (avoid recursion)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# AWS configuration
+aws/
