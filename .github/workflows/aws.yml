@@ -32,27 +32,37 @@ jobs:
     - name: Build, Tag, and Push Image to ECR
       env:
         VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+        VITE_MURF_API_KEY: ${{ secrets.VITE_MURF_API_KEY }}
+        VITE_MURF_VOICE_ID: ${{ secrets.VITE_MURF_VOICE_ID }}
       run: |
         docker build \
           --build-arg VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY \
+          --build-arg VITE_MURF_API_KEY=$VITE_MURF_API_KEY \
+          --build-arg VITE_MURF_VOICE_ID=$VITE_MURF_VOICE_ID \
           -t $IMAGE_URI .
         docker push $IMAGE_URI
 
     - name: Deploy to EC2 via SSH
       uses: appleboy/ssh-action@master
-      env:
-        IMAGE_URI: ${{ env.IMAGE_URI }}
-        AWS_REGION: ${{ secrets.AWS_REGION }}
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
+        envs: IMAGE_URI,AWS_REGION
+        env:
+          IMAGE_URI: ${{ env.IMAGE_URI }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
         script: |
+          # Verify variables
+          echo "Deploying image: $IMAGE_URI in region: $AWS_REGION"
+          
           REGISTRY=$(echo $IMAGE_URI | cut -d/ -f1)
 
-          aws ecr get-login-password --region $AWS_REGION \
-            | docker login --username AWS --password-stdin $REGISTRY
+          # Login to ECR
+          aws ecr get-login-password --region $AWS_REGION | \
+            docker login --username AWS --password-stdin $REGISTRY
 
+          # Pull and Run
           docker pull $IMAGE_URI
           docker stop kira.ai || true
           docker rm kira.ai || true
