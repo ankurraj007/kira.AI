@@ -25,7 +25,8 @@ jobs:
 
     - name: Set ECR image URI
       run: |
-        IMAGE_URI="${{ steps.login-ecr.registry }}/${{ secrets.ECR_REPOSITORY }}:latest"
+        # CORRECT SYNTAX: steps.<id>.outputs.registry
+        IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest"
         echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
 
     - name: Build, Tag, and Push Image to ECR
