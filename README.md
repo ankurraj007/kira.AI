@@ -39,35 +39,26 @@ This application includes a production-ready Docker setup using multi-stage buil
    docker run -p 3000:80 kira-ai
    ```
 
-### AWS Deployment
+### Deployment via GitHub Actions & EC2
 
-The project includes scripts for deploying to AWS ECS Fargate.
+This app is configured to be deployed to an AWS EC2 instance using GitHub Actions.
 
-**Prerequisites:**
-- AWS CLI installed and configured
-- Docker Desktop installed and running
+**1. EC2 One-Time Setup (via AWS Console):**
+Connect to your EC2 instance via the AWS Console and run:
+```bash
+wget https://raw.githubusercontent.com/your-repo/main/aws/setup-ec2.sh
+chmod +x setup-ec2.sh
+./setup-ec2.sh
+```
 
-**Setup & Deploy:**
+**2. GitHub Actions Secrets:**
+Add the following secrets to your GitHub repo settings:
+- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`
+- `ECR_REPOSITORY`, `EC2_HOST`, `EC2_USERNAME`, `EC2_SSH_KEY`
+- API Keys: `VITE_GEMINI_API_KEY`, `VITE_MURF_API_KEY`, `VITE_MURF_VOICE_ID`
 
-1. **One-time Infrastructure Setup:**
-   Run this script to create the ECR repository, CloudWatch log group, and ECS cluster.
-   ```powershell
-   .\aws\setup-aws.ps1 -Region us-east-1
-   ```
-
-2. **Deploy Application:**
-   Run this script to build, tag, push the image, and update the ECS service.
-   ```powershell
-   .\aws\deploy.ps1 -Region us-east-1 -Environment prod
-   ```
-
-**Important:** Before your first deployment, you must:
-1. Update `aws/ecs-task-definition.json` with your actual AWS Account ID and execution roles.
-2. Register the task definition:
-   ```bash
-   aws ecs register-task-definition --cli-input-json file://aws/ecs-task-definition.json
-   ```
-3. Create the ECS Service manually (or via CLI) linking it to your cluster and task definition.
+**3. Automatic Deployment:**
+Pushing to the `main` branch will automatically build and deploy to your EC2 instance.
 
 ## Expanding the ESLint configuration
 
