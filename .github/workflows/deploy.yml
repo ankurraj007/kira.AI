@@ -44,9 +44,15 @@ jobs:
           # Login to ECR
           aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.registry }}
           
+          - name: Debug ECR values
+  run: |
+    echo "REGISTRY=${{ steps.login-ecr.registry }}"
+    echo "REPOSITORY=${{ secrets.ECR_REPOSITORY }}"
+    echo "IMAGE=${{ steps.login-ecr.registry }}/${{ secrets.ECR_REPOSITORY }}:latest"
+
           # Pull and Run
           docker pull ${{ steps.login-ecr.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
-          docker stop kira-ai || true
-          docker rm kira-ai || true
-          docker run -d --name kira-ai -p 80:80 --restart unless-stopped ${{ steps.login-ecr.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
+          docker stop kira.ai || true
+          docker rm kira.ai || true
+          docker run -d --name kira.ai -p 80:80 --restart unless-stopped ${{ steps.login-ecr.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
           docker image prune -f
