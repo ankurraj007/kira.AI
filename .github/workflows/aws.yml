@@ -1,0 +1,60 @@
+name: Build and Deploy to EC2
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Set ECR image URI
+      run: |
+        # CORRECT SYNTAX: steps.<id>.outputs.registry
+        IMAGE_URI="${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY }}:latest"
+        echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
+    - name: Build, Tag, and Push Image to ECR
+      env:
+        VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
+      run: |
+        docker build \
+          --build-arg VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY \
+          -t $IMAGE_URI .
+        docker push $IMAGE_URI
+
+    - name: Deploy to EC2 via SSH
+      uses: appleboy/ssh-action@master
+      env:
+        IMAGE_URI: ${{ env.IMAGE_URI }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          REGISTRY=$(echo $IMAGE_URI | cut -d/ -f1)
+
+          aws ecr get-login-password --region $AWS_REGION \
+            | docker login --username AWS --password-stdin $REGISTRY
+
+          docker pull $IMAGE_URI
+          docker stop kira.ai || true
+          docker rm kira.ai || true
+          docker run -d --name kira.ai -p 80:80 --restart unless-stopped $IMAGE_URI
+          docker image prune -f
