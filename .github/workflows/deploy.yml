@@ -53,7 +53,7 @@ jobs:
             | docker login --username AWS --password-stdin $REGISTRY
 
           docker pull $IMAGE_URI
-          docker stop kira-ai || true
-          docker rm kira-ai || true
-          docker run -d --name kira-ai -p 80:80 --restart unless-stopped $IMAGE_URI
+          docker stop kira.ai || true
+          docker rm kira.ai || true
+          docker run -d --name kira.ai -p 80:80 --restart unless-stopped $IMAGE_URI
           docker image prune -f
