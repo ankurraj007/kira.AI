@@ -63,6 +63,8 @@ jobs:
             docker run -d \
               --name kira.ai \
               -p 80:80 \
+              -p 443:443 \
+              -v /etc/letsencrypt:/etc/letsencrypt:ro \
               --restart unless-stopped \
               $IMAGE_URI
 
