@@ -7,6 +7,7 @@ on:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout Code
       uses: actions/checkout@v4
@@ -22,37 +23,37 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
+    - name: Set ECR image URI
+      run: |
+        IMAGE_URI="${{ steps.login-ecr.registry }}/${{ secrets.ECR_REPOSITORY }}:latest"
+        echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
+
     - name: Build, Tag, and Push Image to ECR
       env:
-        ECR_REGISTRY: ${{ steps.login-ecr.registry }}
-        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-        IMAGE_TAG: latest
         VITE_GEMINI_API_KEY: ${{ secrets.VITE_GEMINI_API_KEY }}
       run: |
         docker build \
           --build-arg VITE_GEMINI_API_KEY=$VITE_GEMINI_API_KEY \
-          -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          -t $IMAGE_URI .
+        docker push $IMAGE_URI
 
     - name: Deploy to EC2 via SSH
       uses: appleboy/ssh-action@master
+      env:
+        IMAGE_URI: ${{ env.IMAGE_URI }}
+        AWS_REGION: ${{ secrets.AWS_REGION }}
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # Login to ECR
-          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.registry }}
-          
-          - name: Debug ECR values
-  run: |
-    echo "REGISTRY=${{ steps.login-ecr.registry }}"
-    echo "REPOSITORY=${{ secrets.ECR_REPOSITORY }}"
-    echo "IMAGE=${{ steps.login-ecr.registry }}/${{ secrets.ECR_REPOSITORY }}:latest"
+          REGISTRY=$(echo $IMAGE_URI | cut -d/ -f1)
 
-          # Pull and Run
-          docker pull ${{ steps.login-ecr.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
-          docker stop kira.ai || true
-          docker rm kira.ai || true
-          docker run -d --name kira.ai -p 80:80 --restart unless-stopped ${{ steps.login-ecr.registry }}/${{ secrets.ECR_REPOSITORY }}:latest
+          aws ecr get-login-password --region $AWS_REGION \
+            | docker login --username AWS --password-stdin $REGISTRY
+
+          docker pull $IMAGE_URI
+          docker stop kira-ai || true
+          docker rm kira-ai || true
+          docker run -d --name kira-ai -p 80:80 --restart unless-stopped $IMAGE_URI
           docker image prune -f
