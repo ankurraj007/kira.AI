@@ -1,49 +1,87 @@
-# AI Voice Chatbot Documentation
+# Kira.AI
 
-## Overview
-This repository contains a comprehensive AI voice chatbot designed to assist users in various tasks. This documentation provides insights into its functionality, uses, tech stack, file structure, and the required APIs. 
+Kira.AI is a sophisticated AI-powered chat application featuring advanced voice interaction, real-time 3D visualizations, and seamless integration with the Google Gemini API.
 
-## Uses
-- **Customer Support**: Engage and assist users with queries in real-time.
-- **Information Retrieval**: Provide information on specific topics through voice commands.
-- **Personal Assistant**: Schedule tasks, set reminders, and manage calendar events.
-- **Entertainment**: Interact with users through games and quizzes.
+## 🚀 Features
 
-## Tech Stack
-- **Frontend**: 
-  - React for building user interfaces
-  - Redux for state management
-- **Backend**:
-  - Node.js with Express for server-side logic
-  - Python for AI model integration
-- **Database**: 
-  - MongoDB for storing user interactions and preferences
-- **APIs**:
-  - Google Cloud Speech-to-Text for voice recognition
-  - Dialogflow for natural language understanding
-  - Twilio API for communication
+- **Gemini Chat**: Intelligent conversational AI powered by Google's Gemini models.
+- **Voice Interaction**: Integrated speech recognition and synthesis for hands-free communication.
+- **3D Particle Sphere**: Interactive 3D visualization using Three.js that responds to audio input.
+- **Responsive UI**: Sleek, modern design built with React and Tailwind CSS.
 
-## File Structure
+## 📁 File Structure
+
+```text
+kira.AI/
+├── .github/              # GitHub Actions workflows for CI/CD
+├── aws/                   # AWS deployment configurations
+├── public/                # Static assets
+├── src/
+│   ├── components/        # React components
+│   │   ├── ChatContainer.tsx    # Main chat interface
+│   │   ├── ChatMessage.tsx      # Individual chat bubbles
+│   │   ├── Header.tsx           # Application header
+│   │   ├── ParticleSphere.tsx   # Three.js 3D visualization
+│   │   └── VoiceButton.tsx      # Integrated voice control
+│   ├── hooks/             # Custom React hooks
+│   │   ├── useAudioAnalyzer.ts  # Audio processing for 3D visualizer
+│   │   ├── useGemini.ts         # Gemini API integration logic
+│   │   ├── useSpeechRecognition.ts
+│   │   └── useSpeechSynthesis.ts
+│   ├── types/             # TypeScript type definitions
+│   ├── App.tsx            # Main application component
+│   ├── index.css          # Global styles (Tailwind CSS)
+│   └── main.tsx           # Entry point
+├── Dockerfile             # Docker configuration for deployment
+├── docker-compose.yml     # Multi-container orchestration
+├── nginx.conf             # Web server configuration
+├── package.json           # Dependencies and scripts
+├── tsconfig.json          # TypeScript configuration
+└── vite.config.ts         # Vite build tool setup
 ```
-├── src
-│   ├── components    # React components
-│   ├── utils         # Utility functions
-│   ├── views         # Main views/screens
-│   └── styles        # CSS styles
-├── models            # AI models and scripts
-├── config            # Configuration files
-└── package.json      # Project dependencies
-```
 
-## Required APIs
-- **Google Cloud Speech-to-Text**: To convert spoken words into text.
-- **Dialogflow API**: To handle natural language processing and user intent recognition.
-- **Twilio API**: For integrating messaging and voice capabilities in real-time.
+## 🛠️ Technology Stack
 
-For further information, please refer to the individual API documentation. 
+- **Frontend**: [React](https://reactjs.org/), [TypeScript](https://www.typescriptlang.org/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **3D Graphics**: [Three.js](https://threejs.org/), [@react-three/fiber](https://github.com/pmndrs/react-three-fiber)
+- **AI Integration**: [Google Gemini API](https://ai.google.dev/)
+- **Deployment**: Docker, AWS, GitHub Actions
 
-## Contribution
-To contribute, please submit a pull request or open an issue if you find a bug or want to add a new feature. 
+## 🚦 Getting Started
 
-### License
-This project is licensed under the MIT License. 
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (v18+)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
+
+### Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/ankurraj007/kira.AI.git
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create a `.env` file and add your Gemini API Key:
+   ```env
+   VITE_GEMINI_API_KEY=your_api_key_here
+   ```
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 👨‍💻 Author
+
+**Ankur Raj**
+
+- GitHub: [@ankurraj007](https://github.com/ankurraj007)
