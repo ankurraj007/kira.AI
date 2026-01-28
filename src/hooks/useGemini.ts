@@ -52,7 +52,7 @@ export function useGemini(): UseGeminiReturn {
 
             // Use streamGenerateContent for faster response
             const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
+                `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:streamGenerateContent?alt=sse&key=${apiKey}`,
                 {
                     method: 'POST',
                     headers: {
