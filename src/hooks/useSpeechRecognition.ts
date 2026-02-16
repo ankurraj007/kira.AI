@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 interface UseSpeechRecognitionReturn {
     isListening: boolean;
@@ -21,28 +21,19 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
     const isSupported = typeof window !== 'undefined' &&
         ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window);
 
-    const startListening = useCallback(() => {
-        if (!isSupported) {
-            setError('Speech recognition is not supported in this browser.');
-            return;
-        }
+    const createRecognition = useCallback(() => {
+        if (!isSupported) return;
 
-        // Stop any existing recognition
+        // Cleanup existing
         if (recognitionRef.current) {
             try {
+                recognitionRef.current.onend = null; // Prevent triggering old onend
                 recognitionRef.current.abort();
             } catch (e) {
                 // Ignore
             }
         }
 
-        // Reset state
-        setTranscript('');
-        setInterimTranscript('');
-        setError(null);
-        shouldRestartRef.current = true;
-
-        // Create fresh recognition instance
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition();
 
@@ -58,14 +49,15 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
         recognition.onend = () => {
             console.log('🛑 Recognition ended');
-            // Only restart if we should still be listening
-            if (shouldRestartRef.current && recognitionRef.current) {
-                console.log('� Restarting...');
-                try {
-                    recognitionRef.current.start();
-                } catch (e) {
-                    setIsListening(false);
-                }
+            // Check if we should restart
+            if (shouldRestartRef.current) {
+                // Add a small delay and create a NEW instance
+                setTimeout(() => {
+                    if (shouldRestartRef.current) {
+                        console.log('🔄 Restarting with fresh instance...');
+                        createRecognition();
+                    }
+                }, 300);
             } else {
                 setIsListening(false);
             }
@@ -100,11 +92,18 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
                 'audio-capture': 'Microphone not found.',
                 'not-allowed': 'Microphone access denied.',
                 'network': 'Network error. Check your internet.',
+                'aborted': 'Scanning stopped.',
             };
 
             if (event.error !== 'aborted' && event.error !== 'no-speech') {
-                setError(errorMessages[event.error] || `Error: ${event.error}`);
-                shouldRestartRef.current = false;
+                // Don't show technical errors to user, just log them
+                if (event.error !== 'not-allowed' && event.error !== 'audio-capture') {
+                    // For correctable errors, we might want to suppress and restart
+                    // But for auth/hardware errors, we must stop
+                } else {
+                    setError(errorMessages[event.error] || `Error: ${event.error}`);
+                    shouldRestartRef.current = false;
+                }
             }
         };
 
@@ -113,9 +112,26 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
         try {
             recognition.start();
         } catch (e) {
+            console.error('Failed to start recognition:', e);
             setError('Failed to start speech recognition');
+            setIsListening(false);
         }
     }, [isSupported]);
+
+    const startListening = useCallback(() => {
+        if (!isSupported) {
+            setError('Speech recognition is not supported in this browser.');
+            return;
+        }
+
+        // Reset state
+        setTranscript('');
+        setInterimTranscript('');
+        setError(null);
+        shouldRestartRef.current = true;
+
+        createRecognition();
+    }, [isSupported, createRecognition]);
 
     const stopListening = useCallback(() => {
         console.log('⏹️ Stopping...');
@@ -123,11 +139,24 @@ export function useSpeechRecognition(): UseSpeechRecognitionReturn {
 
         if (recognitionRef.current) {
             try {
-                recognitionRef.current.stop();
+                recognitionRef.current.abort(); // abort is faster than stop for immediate cleanup
             } catch (e) {
                 // Ignore
             }
         }
+        setIsListening(false);
+    }, []);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            shouldRestartRef.current = false;
+            if (recognitionRef.current) {
+                try {
+                    recognitionRef.current.abort();
+                } catch (e) { }
+            }
+        };
     }, []);
 
     return {
