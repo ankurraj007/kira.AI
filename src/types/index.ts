@@ -10,7 +10,7 @@ export interface SpeechRecognitionResult {
     isFinal: boolean;
 }
 
-export interface GeminiResponse {
+export interface GroqResponse {
     text: string;
     error?: string;
 }

@@ -4,7 +4,7 @@ import { ChatContainer } from './components/ChatContainer';
 import { VoiceButton } from './components/VoiceButton';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from './hooks/useSpeechSynthesis';
-import { useGemini } from './hooks/useGemini';
+import { useGroq } from './hooks/useGroq';
 import { useAudioAnalyzer } from './hooks/useAudioAnalyzer';
 import type { Message } from './types';
 import './index.css';
@@ -24,7 +24,7 @@ function App() {
   } = useSpeechRecognition();
 
   const { speak, stop: stopSpeaking, isSpeaking } = useSpeechSynthesis();
-  const { sendMessage, isLoading, error: geminiError } = useGemini();
+  const { sendMessage, isLoading, error: groqError } = useGroq();
 
   // Audio analyzer for voice-reactive visualizations
   const {
@@ -119,7 +119,7 @@ function App() {
     }
   }, [isListening, isSpeaking, startListening, stopListening, sendMessage, speak, stopSpeaking, startAnalyzing, stopAnalyzing]);
 
-  const displayError = error || speechError || geminiError;
+  const displayError = error || speechError || groqError;
 
   return (
     <div className="h-screen flex flex-col relative overflow-hidden bg-[#0A0F1A]">

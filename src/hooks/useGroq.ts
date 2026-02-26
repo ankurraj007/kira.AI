@@ -1,22 +1,22 @@
 import { useState, useCallback, useRef } from 'react';
 import type { Message } from '../types';
 
-interface UseGeminiReturn {
+interface UseGroqReturn {
     sendMessage: (userMessage: string, history: Message[], onChunk?: (chunk: string) => void) => Promise<string>;
     isLoading: boolean;
     error: string | null;
 }
 
-export function useGemini(): UseGeminiReturn {
+export function useGroq(): UseGroqReturn {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const sendMessage = useCallback(async (userMessage: string, history: Message[], onChunk?: (chunk: string) => void): Promise<string> => {
-        const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        const apiKey = import.meta.env.VITE_GROQ_API_KEY;
 
         if (!apiKey) {
-            const errorMsg = 'Gemini API key not found. Please add VITE_GEMINI_API_KEY to your .env file.';
+            const errorMsg = 'Groq API key not found. Please add VITE_GROQ_API_KEY to your .env file.';
             setError(errorMsg);
             throw new Error(errorMsg);
         }
@@ -31,41 +31,37 @@ export function useGemini(): UseGeminiReturn {
         setError(null);
 
         try {
-            const contents = [
+            // Build messages in OpenAI format
+            const messages = [
                 {
-                    role: 'user',
-                    parts: [{ text: 'You are a warm, human-like voice assistant. Keep responses natural, conversational, and concise. Avoid lists, bullets, or markdown. Use short sentences.' }]
-                },
-                {
-                    role: 'model',
-                    parts: [{ text: 'I understand. I will keep my responses naturally conversational and brief.' }]
+                    role: 'system' as const,
+                    content: 'You are a warm, human-like voice assistant. Keep responses natural, conversational, and concise. Avoid lists, bullets, or markdown. Use short sentences.'
                 },
                 ...history.map(msg => ({
-                    role: msg.role === 'user' ? 'user' : 'model',
-                    parts: [{ text: msg.content }]
+                    role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
+                    content: msg.content
                 })),
                 {
-                    role: 'user',
-                    parts: [{ text: userMessage }]
+                    role: 'user' as const,
+                    content: userMessage
                 }
             ];
 
-            // Use streamGenerateContent for faster response
+            // Use Groq's OpenAI-compatible streaming API
             const response = await fetch(
-                `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
+                'https://api.groq.com/openai/v1/chat/completions',
                 {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`,
                     },
                     body: JSON.stringify({
-                        contents,
-                        generationConfig: {
-                            temperature: 0.8,
-                            topK: 40,
-                            topP: 0.95,
-                            maxOutputTokens: 1024,
-                        },
+                        model: 'llama-3.1-8b-instant',
+                        messages,
+                        temperature: 0.8,
+                        max_tokens: 1024,
+                        stream: true,
                     }),
                     signal: abortControllerRef.current.signal,
                 }
@@ -89,14 +85,13 @@ export function useGemini(): UseGeminiReturn {
                 if (done) break;
 
                 const chunk = decoder.decode(value, { stream: true });
-                // SSE format: data: {"candidates": [...]}
                 const lines = chunk.split('\n');
 
                 for (const line of lines) {
-                    if (line.startsWith('data: ')) {
+                    if (line.startsWith('data: ') && line !== 'data: [DONE]') {
                         try {
                             const data = JSON.parse(line.slice(6));
-                            const textChunk = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                            const textChunk = data.choices?.[0]?.delta?.content;
                             if (textChunk) {
                                 fullText += textChunk;
                                 if (onChunk) onChunk(textChunk);
@@ -120,11 +115,11 @@ export function useGemini(): UseGeminiReturn {
                 throw err;
             }
             let errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-            console.error('Gemini API Error:', errorMessage);
+            console.error('Groq API Error:', errorMessage);
 
-            // Provide friendly message for quota limits
-            if (errorMessage.toLowerCase().includes('quota') || errorMessage.includes('429')) {
-                errorMessage = 'Rate limit reached. Please wait a minute and try again. (Raw: ' + (err instanceof Error ? err.message : '') + ')';
+            // Provide friendly message for rate limits
+            if (errorMessage.toLowerCase().includes('rate') || errorMessage.includes('429')) {
+                errorMessage = 'Rate limit reached. Please wait a minute and try again.';
             }
 
             setError(errorMessage);
